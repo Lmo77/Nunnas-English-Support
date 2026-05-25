@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN,
+});
+
 export async function GET(request) {
-  const redis = Redis.fromEnv();
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   if (id) {
@@ -18,7 +22,6 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const redis = Redis.fromEnv();
   const body = await request.json();
   const id = Math.random().toString(36).slice(2, 9);
   const activity = {
@@ -32,7 +35,6 @@ export async function POST(request) {
 }
 
 export async function DELETE(request) {
-  const redis = Redis.fromEnv();
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "No id" }, { status: 400 });
