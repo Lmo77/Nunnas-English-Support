@@ -59,12 +59,7 @@ export default function StudentPage({ params }) {
       {timeLeft !== null && (
         <div style={{fontSize:"1.5rem",fontWeight:"bold",margin:"1rem 0",color: timeLeft < 60 ? "red" : "black"}}>
           {!timerStarted ? (
-            <button
-              onClick={startTimer}
-              style={{padding:"0.5rem 1.5rem",fontSize:"1rem",cursor:"pointer",background:"#4CAF50",color:"white",border:"none",borderRadius:"4px"}}
-            >
-              Start Timer ({activity.timerMinutes} min)
-            </button>
+            <p style={{color:"gray",fontSize:"1rem"}}>Timer will start when you begin typing.</p>
           ) : (
             `Time left: ${formatTime(timeLeft)}`
           )}
@@ -73,7 +68,10 @@ export default function StudentPage({ params }) {
 
       <textarea
         value={essay}
-        onChange={(e) => setEssay(e.target.value)}
+        onChange={(e) => {
+          setEssay(e.target.value);
+          if (!timerStarted && timeLeft !== null) startTimer();
+        }}
         rows={10}
         style={{width:"100%",padding:"0.5rem",fontSize:"1rem"}}
         placeholder="Write your essay here..."
