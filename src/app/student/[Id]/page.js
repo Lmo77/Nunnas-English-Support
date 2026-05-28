@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function StudentPage({ params }) {
   const [activity, setActivity] = useState(null);
@@ -8,6 +8,9 @@ export default function StudentPage({ params }) {
   const [feedback, setFeedback] = useState(null);
   const [grading, setGrading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [timerStarted, setTimerStarted] = useState(false);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     const id = params?.id || window.location.pathname.split("/").pop();
@@ -16,9 +19,32 @@ export default function StudentPage({ params }) {
       .then((data) => {
         if (data.error) { setNotFound(true); return; }
         setActivity(data);
+        if (data.timerMinutes > 0) setTimeLeft(data.timerMinutes * 60);
       })
       .catch(() => setNotFound(true));
   }, []);
+
+  const startTimer = () => {
+    setTimerStarted(true);
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          setSubmitted(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const wordCount = essay.trim() === "" ? 0 : essay.trim().split(/\s+/).length;
 
   if (notFound) return <div style={{padding:"2rem"}}>Activity not found.</div>;
   if (!activity) return <div style={{padding:"2rem"}}>Loading...</div>;
@@ -29,6 +55,22 @@ export default function StudentPage({ params }) {
       <p><strong>Level:</strong> {activity.cefrLevel} | <strong>Type:</strong> {activity.taskType}</p>
       <p><strong>Prompt:</strong> {activity.prompt}</p>
       <p><strong>Target words:</strong> {activity.targetWords}</p>
+
+      {timeLeft !== null && (
+        <div style={{fontSize:"1.5rem",fontWeight:"bold",margin:"1rem 0",color: timeLeft < 60 ? "red" : "black"}}>
+          {!timerStarted ? (
+            <button
+              onClick={startTimer}
+              style={{padding:"0.5rem 1.5rem",fontSize:"1rem",cursor:"pointer",background:"#4CAF50",color:"white",border:"none",borderRadius:"4px"}}
+            >
+              Start Timer ({activity.timerMinutes} min)
+            </button>
+          ) : (
+            `Time left: ${formatTime(timeLeft)}`
+          )}
+        </div>
+      )}
+
       <textarea
         value={essay}
         onChange={(e) => setEssay(e.target.value)}
@@ -37,11 +79,13 @@ export default function StudentPage({ params }) {
         placeholder="Write your essay here..."
         disabled={submitted}
       />
-      <p>Words: {essay.trim() === "" ? 0 : essay.trim().split(/\s+/).length}</p>
-      {!submitted && (
+      <p>Words: {wordCount} / Target: {activity.targetWords}</p>
+
+      {!submitted && (timerStarted || timeLeft === null) && (
         <button
           onClick={async () => {
             setGrading(true);
+            clearInterval(timerRef.current);
             const res = await fetch("/api/grade", {
               method: "POST",
               headers: {"Content-Type":"application/json"},
@@ -58,6 +102,7 @@ export default function StudentPage({ params }) {
           {grading ? "Grading..." : "Submit"}
         </button>
       )}
+
       {feedback && (
         <div style={{marginTop:"2rem",padding:"1rem",background:"#f0f0f0",borderRadius:"8px"}}>
           <h2>Feedback</h2>
