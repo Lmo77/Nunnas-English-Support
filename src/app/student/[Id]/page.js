@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { inputStyle, cardStyle, btnPrimary, btnSecondary, ScoreBar } from "../../shared";
 
 export default function StudentPage({ params }) {
-  const [id, setId] = useState(null);
+  const id = params.id;
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -15,10 +15,6 @@ export default function StudentPage({ params }) {
   const [timerStarted, setTimerStarted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const timerRef = useRef(null);
-
-  useEffect(() => {
-    Promise.resolve(params).then((p) => setId(p.id));
-  }, [params]);
 
   useEffect(() => {
     if (!id) return;
